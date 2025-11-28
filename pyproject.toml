@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "TaskfileToTasks"
 version = "1.0.0"
-description = "Convert Taskfile.yml to tasks.json for VSCode or Zed editors"
+description = "Convert Taskfile.yml to editor task configurations (like Zed and VSCode)."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

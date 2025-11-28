@@ -24,35 +24,19 @@ Examples:
   # Convert to Zed (default)
   TaskfileToTasks.py
 
-  # Convert to VSCode
-  TaskfileToTasks.py --editor vscode
-
-  # Use custom Taskfile location
-  TaskfileToTasks.py --source /path/to/Taskfile.yml
-
-  # Output to custom directory
-  TaskfileToTasks.py --output /path/to/output
+  # Use custom locations
+  TaskfileToTasks.py --source /path/to/Taskfile.yml --output /path/to/output
 
   # Skip specific tasks
   TaskfileToTasks.py --skip-tasks build test lint
 
-  # Add Zed-specific options
-  TaskfileToTasks.py --extra-zed-options "use_new_terminal: true"
-
-  # Add multiple Zed options
+  # Add extra options
   TaskfileToTasks.py \\
     --extra-zed-options "use_new_terminal: true" \\
     --extra-zed-options "cwd: /tmp"
 
-  # Add VSCode options
-  TaskfileToTasks.py --editor vscode \\
-    --extra-vscode-options "reveal: silent"
-
   # Preview tasks without generating
   TaskfileToTasks.py --preview
-
-  # Verbose output
-  TaskfileToTasks.py --verbose
         """,
     )
 

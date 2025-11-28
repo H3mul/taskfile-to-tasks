@@ -42,7 +42,7 @@ pip install git+https://github.com/H3mul/TaskfileToTasks.git
 ### Command-Line Options
 
 ```
-usage: TaskfileToTasks [-h] [--version] [--editor {vscode,zed}] [--source SOURCE] [--output OUTPUT]
+usage: taskfile-to-tasks [-h] [--version] [--editor {vscode,zed}] [--source SOURCE] [--output OUTPUT]
                        [--skip-tasks SKIP_TASKS [SKIP_TASKS ...]] [--extra-zed-options YAML] [--extra-vscode-options YAML]
                        [--preview] [--verbose]
 
@@ -69,34 +69,34 @@ options:
 
 **Preview tasks before generating:**
 ```bash
-TaskfileToTasks --preview
+taskfile-to-tasks --preview
 ```
 
 **Generate Zed tasks from custom Taskfile location:**
 ```bash
-TaskfileToTasks --source /path/to/Taskfile.yml --output ./editor-config
+taskfile-to-tasks --source /path/to/Taskfile.yml --output ./editor-config
 ```
 
 **Skip specific tasks:**
 ```bash
-TaskfileToTasks --skip-tasks build test lint
+taskfile-to-tasks --skip-tasks build test lint
 ```
 
 **Add Zed-specific options:**
 ```bash
-TaskfileToTasks --extra-zed-options "use_new_terminal: true"
+taskfile-to-tasks --extra-zed-options "use_new_terminal: true"
 ```
 
 **Multiple Zed options:**
 ```bash
-TaskfileToTasks \
+taskfile-to-tasks \
   --extra-zed-options "use_new_terminal: true" \
   --extra-zed-options "cwd: /tmp"
 ```
 
 **VSCode with custom presentation:**
 ```bash
-TaskfileToTasks --editor vscode \
+taskfile-to-tasks --editor vscode \
   --extra-vscode-options "reveal: silent" \
   --extra-vscode-options "echo: false"
 ```
@@ -200,10 +200,10 @@ You can override defaults by passing YAML key-value pairs:
 
 ```bash
 # Zed: Use same terminal for all tasks
-TaskfileToTasks --extra-zed-options "use_new_terminal: false"
+taskfile-to-tasks --extra-zed-options "use_new_terminal: false"
 
 # VSCode: Silently execute tasks
-TaskfileToTasks --editor vscode --extra-vscode-options "reveal: silent"
+taskfile-to-tasks --editor vscode --extra-vscode-options "reveal: silent"
 ```
 
 ## Workflow Integration
@@ -220,12 +220,12 @@ TaskfileToTasks --editor vscode --extra-vscode-options "reveal: silent"
    ```yaml
    # Example GitHub Actions
    - name: Sync Taskfile to tasks.json
-     run: TaskfileToTasks
+     run: taskfile-to-tasks
    ```
 
 3. **Local development**: Run the script when you modify Taskfile.yml:
    ```bash
-   TaskfileToTasks
+   taskfile-to-tasks
    ```
 
 ## Troubleshooting

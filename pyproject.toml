@@ -51,7 +51,7 @@ Documentation = "https://github.com/H3mul/TaskfileToTasks#readme"
 "Bug Tracker" = "https://github.com/H3mul/TaskfileToTasks/issues"
 
 [project.scripts]
-TaskfileToTasks = "taskfile_to_tasks.cli:main"
+taskfile-to-tasks = "taskfile_to_tasks.cli:main"
 
 [tool.setuptools]
 packages = ["taskfile_to_tasks"]

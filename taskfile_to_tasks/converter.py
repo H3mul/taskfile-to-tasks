@@ -98,6 +98,7 @@ class TaskfileToTasks:
         self.verbose = verbose
         self.source_file = self._resolve_source_file(source_file)
         self.output_dir = self._resolve_output_dir(output_dir)
+        self.task_command = self._find_task_command()
 
         # Parse extra options
         self.extra_zed_options = self._parse_extra_options(extra_zed_options or [])
@@ -111,6 +112,35 @@ class TaskfileToTasks:
         """
         if self.verbose:
             print(message)
+
+    def _find_task_command(self) -> str:
+        """Find the available task command.
+        
+        Tries to find either 'task' or 'go-task' in the system PATH.
+        
+        Returns:
+            The command name ('task' or 'go-task')
+            
+        Raises:
+            RuntimeError: If neither command is found
+        """
+        for cmd in ["task", "go-task"]:
+            try:
+                subprocess.run(
+                    [cmd, "--version"],
+                    capture_output=True,
+                    check=True,
+                    timeout=5,
+                )
+                self._log(f"Found task command: {cmd}")
+                return cmd
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+        
+        raise RuntimeError(
+            "Neither 'task' nor 'go-task' command found. "
+            "Please install go-task: https://taskfile.dev/installation"
+        )
 
     def _parse_extra_options(self, options: List[str]) -> List[Dict[str, Any]]:
         """Parse a list of YAML option strings.
@@ -205,7 +235,7 @@ class TaskfileToTasks:
         return path.resolve()
 
     def _load_taskfile(self) -> List[Dict[str, Any]]:
-        """Load all tasks using 'task --list-all --json'.
+        """Load all tasks using 'task --list-all --json' or 'go-task --list-all --json'.
         
         Runs the task command in the Taskfile's directory to get all tasks
         including those from included Taskfiles.
@@ -214,14 +244,14 @@ class TaskfileToTasks:
             List of task dictionaries from task command output
             
         Raises:
-            subprocess.CalledProcessError: If task command fails
+            RuntimeError: If task command fails
             ValueError: If output is not valid JSON
         """
         try:
             # Run task command in the Taskfile's directory
             taskfile_dir = self.source_file.parent
             result = subprocess.run(
-                ["task", "--list-all", "--json"],
+                [self.task_command, "--list-all", "--json"],
                 cwd=taskfile_dir,
                 capture_output=True,
                 text=True,
@@ -236,7 +266,7 @@ class TaskfileToTasks:
             return tasks_data
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
-                f"Failed to run 'task --list-all --json': {e.stderr}"
+                f"Failed to run '{self.task_command} --list-all --json': {e.stderr}"
             )
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON from task command: {e}")
@@ -308,7 +338,7 @@ class TaskfileToTasks:
             vscode_task = {
                 "label": task["label"],
                 "type": "shell",
-                "command": "task",
+                "command": self.task_command,
                 "args": [task["id"]],
                 "presentation": presentation,
                 "group": {"kind": "build", "isDefault": False},
@@ -346,7 +376,7 @@ class TaskfileToTasks:
             task_label = f"{task['id']} - {task['description']}" if task["description"] else task["id"]
             zed_task = {
                 "label": task_label,
-                "command": "task",
+                "command": self.task_command,
                 "args": [task["id"]],
             }
 

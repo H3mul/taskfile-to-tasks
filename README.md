@@ -10,6 +10,7 @@ This tool bridges the gap between [Task](https://taskfile.dev/) (a task runner s
 - **Zed** `.zed/tasks.json`
 - **VSCode** `.vscode/tasks.json`
 
+The generated `tasks.json` files are dummy tasks that share Taskfile task names and call the Go-Task CLI directly
 
 ### Basic Usage without Installation
 
@@ -53,7 +54,8 @@ For more information, visit the [AUR package page](https://aur.archlinux.org/pac
 
 ```
 usage: taskfile-to-tasks [-h] [--version] [--editor {vscode,zed}] [--source SOURCE] [--output OUTPUT]
-                       [--skip-tasks SKIP_TASKS [SKIP_TASKS ...]] [--extra-zed-options YAML] [--extra-vscode-options YAML]
+                       [--skip-tasks SKIP_TASKS [SKIP_TASKS ...]] [--skip-task-pattern REGEX]
+                       [--task-cmd TASK_CMD] [--extra-zed-options YAML] [--extra-vscode-options YAML]
                        [--preview] [--verbose]
 
 Convert Taskfile.yml to tasks.json for VSCode or Zed
@@ -67,6 +69,12 @@ options:
   --output OUTPUT       Output directory for tasks.json (default: .zed/ or .vscode/)
   --skip-tasks SKIP_TASKS [SKIP_TASKS ...]
                         Task IDs to skip
+  --skip-task-pattern REGEX
+                        Regex pattern for task IDs to skip (can be used multiple times).
+                        Example: '^test_' to skip all tasks starting with 'test_'
+  --task-cmd TASK_CMD   Task command to use in generated tasks.json (e.g., 'task', 'go-task').
+                        Useful when the running platform differs from the target platform.
+                        Default: auto-detected from system
   --extra-zed-options YAML
                         Extra YAML options for Zed tasks (can be used multiple times). Example: 'use_new_terminal: true'
   --extra-vscode-options YAML
@@ -90,6 +98,26 @@ taskfile-to-tasks --source /path/to/Taskfile.yml --output ./editor-config
 **Skip specific tasks:**
 ```bash
 taskfile-to-tasks --skip-tasks build test lint
+```
+
+**Skip tasks by regex pattern:**
+```bash
+taskfile-to-tasks --skip-task-pattern '^test_'
+```
+
+**Skip multiple regex patterns:**
+```bash
+taskfile-to-tasks --skip-task-pattern '^test_' --skip-task-pattern '.*:setup$'
+```
+
+**Use custom task command for tasks.json:**
+```bash
+taskfile-to-tasks --task-cmd "go-task"
+```
+
+**Combine skip patterns with custom task command:**
+```bash
+taskfile-to-tasks --task-cmd "go-task" --skip-task-pattern 'debug.*'
 ```
 
 **Add Zed-specific options:**
@@ -238,6 +266,79 @@ taskfile-to-tasks --editor vscode --extra-vscode-options "reveal: silent"
    taskfile-to-tasks
    ```
 
+## Advanced Features
+
+### Skip Tasks by Pattern
+
+The `--skip-task-pattern` flag allows you to skip tasks using regex patterns. This is useful for filtering out categories of tasks without listing each one individually.
+
+**Examples:**
+```bash
+# Skip all tasks starting with 'test_'
+taskfile-to-tasks --skip-task-pattern '^test_'
+
+# Skip all tasks ending with ':setup'
+taskfile-to-tasks --skip-task-pattern '.*:setup$'
+
+# Skip multiple patterns
+taskfile-to-tasks --skip-task-pattern '^debug_' --skip-task-pattern '.*:cleanup$'
+
+# Combine with exact task skip
+taskfile-to-tasks --skip-tasks build deploy --skip-task-pattern 'experimental_.*'
+```
+
+**Pattern Syntax:**
+Patterns use standard Python regex syntax. Some common examples:
+- `^prefix_` - Tasks starting with "prefix_"
+- `.*suffix$` - Tasks ending with "suffix"
+- `.*cleanup.*` - Tasks containing "cleanup"
+- `(test|debug)_.*` - Tasks matching either "test_" or "debug_"
+
+### Cross-Platform Task Commands
+
+The `--task-cmd` flag allows you to specify a custom task command for the generated `tasks.json`. This is particularly useful when:
+
+1. **Your development environment differs from your target environment**: For example, you might run the build script on Linux but target macOS with `go-task`.
+2. **Using different task runner installations**: Specify `task`, `go-task`, or any other task command.
+3. **Team consistency**: Ensure all team members use the same task command in their editors, regardless of their local setup.
+
+**How it works:**
+- The script **auto-detects** the task command on your current system (used to load/parse Taskfile.yml)
+- The `--task-cmd` flag **overrides** only the command used in the generated tasks.json
+- This separation allows cross-platform task generation
+
+**Examples:**
+```bash
+# Use 'go-task' in tasks.json (running on Linux, targeting macOS)
+taskfile-to-tasks --task-cmd "go-task"
+
+# VSCode with custom task command
+taskfile-to-tasks --editor vscode --task-cmd "go-task"
+
+# Zed with go-task and custom options
+taskfile-to-tasks --editor zed --task-cmd "go-task" --extra-zed-options "use_new_terminal: false"
+```
+
+**Generated Output Difference:**
+
+Without `--task-cmd`:
+```json
+{
+  "label": "build",
+  "command": "task",
+  "args": ["build"]
+}
+```
+
+With `--task-cmd "go-task"`:
+```json
+{
+  "label": "build",
+  "command": "go-task",
+  "args": ["build"]
+}
+```
+
 ## Troubleshooting
 
 ### Taskfile.yml not found
@@ -255,4 +356,29 @@ taskfile-to-tasks --editor vscode --extra-vscode-options "reveal: silent"
 
 # ✗ Incorrect
 --extra-zed-options "use_new_terminal true"
+```
+
+### Invalid regex pattern
+**Error:** `Invalid regex pattern '...' ...`
+
+**Solution:** Ensure your `--skip-task-pattern` uses valid regex syntax. Test your pattern:
+```bash
+# ✓ Correct regex
+taskfile-to-tasks --skip-task-pattern '^test_'
+
+# ✗ Incorrect regex (unmatched bracket)
+taskfile-to-tasks --skip-task-pattern '[incomplete'
+```
+
+### Task command not found
+**Error:** `Neither 'task' nor 'go-task' command found...`
+
+**Solution:** Install the task runner or use `--task-cmd` to specify a custom command path:
+```bash
+# Install go-task
+brew install go-task  # macOS
+apt install go-task   # Linux
+
+# Or specify explicit path
+taskfile-to-tasks --task-cmd "/usr/local/bin/task"
 ```

@@ -13,9 +13,7 @@ from typing import Any, Dict, List, Optional
 try:
     import yaml
 except ImportError:
-    raise ImportError(
-        "PyYAML is required. Install it with: pip install PyYAML"
-    )
+    raise ImportError("PyYAML is required. Install it with: pip install PyYAML")
 
 
 def parse_yaml_option(option_str: str) -> Dict[str, Any]:
@@ -102,7 +100,9 @@ class TaskfileToTasks:
 
         # Parse extra options
         self.extra_zed_options = self._parse_extra_options(extra_zed_options or [])
-        self.extra_vscode_options = self._parse_extra_options(extra_vscode_options or [])
+        self.extra_vscode_options = self._parse_extra_options(
+            extra_vscode_options or []
+        )
 
     def _log(self, message: str) -> None:
         """Log a message if verbose mode is enabled.
@@ -134,7 +134,12 @@ class TaskfileToTasks:
                 )
                 self._log(f"Found task command: {cmd}")
                 return cmd
-            except (subprocess.CalledProcessError, FileNotFoundError, PermissionError, subprocess.TimeoutExpired):
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                PermissionError,
+                subprocess.TimeoutExpired,
+            ):
                 continue
 
         raise RuntimeError(
@@ -260,7 +265,9 @@ class TaskfileToTasks:
 
             tasks_data = json.loads(result.stdout)
             if not isinstance(tasks_data, dict) or "tasks" not in tasks_data:
-                raise ValueError("Expected task output to be a dictionary with 'tasks' key")
+                raise ValueError(
+                    "Expected task output to be a dictionary with 'tasks' key"
+                )
             tasks_data = tasks_data["tasks"]
             if not isinstance(tasks_data, list):
                 raise ValueError("Expected task output to be a list of tasks")
@@ -294,22 +301,21 @@ class TaskfileToTasks:
             if not isinstance(task, dict):
                 continue
 
-            task_id = task.get("name", "")
+            task_id = task.get("task", "")
             if not task_id or task_id in self.skip_tasks:
                 if task_id in self.skip_tasks:
                     self._log(f"Skipping task: {task_id}")
                 continue
 
             # Extract description and command from task
-            desc = task.get("summary", "")
-            command = task.get("name", task_id)
+            name = task.get("name", task_id)
+            desc = task.get("desc", "")
 
             extracted.append(
                 {
                     "id": task_id,
                     "label": task_id,
                     "description": desc,
-                    "command": command,
                 }
             )
 
@@ -368,15 +374,17 @@ class TaskfileToTasks:
         zed_tasks = []
 
         # Default Zed task options
-        default_options = {
-            "use_new_terminal": True
-        }
+        default_options = {"use_new_terminal": True}
 
         # Merge with extra options
         extra_merged = merge_options(default_options, self.extra_zed_options)
 
         for task in tasks:
-            task_label = f"{task['id']} - {task['description']}" if task["description"] else task["id"]
+            task_label = (
+                f"{task['id']} - {task['description']}"
+                if task["description"]
+                else task["id"]
+            )
             zed_task = {
                 "label": task_label,
                 "command": self.task_command,
@@ -435,7 +443,9 @@ class TaskfileToTasks:
         """
         taskfile = self._load_taskfile()
         tasks = self._extract_tasks(taskfile)
-        return [{"id": task["id"], "description": task["description"]} for task in tasks]
+        return [
+            {"id": task["id"], "description": task["description"]} for task in tasks
+        ]
 
     def print_tasks_summary(self) -> None:
         """Print a formatted summary of the extracted tasks."""

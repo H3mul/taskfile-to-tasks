@@ -30,6 +30,9 @@ Examples:
   # Skip specific tasks
   taskfile-to-tasks --skip-tasks build test lint
 
+  # Skip tasks matching regex patterns
+  taskfile-to-tasks --skip-task-pattern '^test_' --skip-task-pattern '.*:setup$'
+
   # Add extra options
   taskfile-to-tasks \\
     --extra-zed-options "use_new_terminal: true" \\
@@ -73,6 +76,16 @@ Examples:
         nargs="+",
         default=[],
         help="Task IDs to skip",
+    )
+
+    parser.add_argument(
+        "--skip-task-pattern",
+        type=str,
+        action="append",
+        default=[],
+        metavar="REGEX",
+        help="Regex pattern for task IDs to skip (can be used multiple times). "
+        "Example: '^test_' to skip all tasks starting with 'test_'",
     )
 
     parser.add_argument(
@@ -128,6 +141,7 @@ def main(argv: Optional[list] = None) -> int:
             output_dir=args.output,
             editor=args.editor,
             skip_tasks=args.skip_tasks,
+            skip_task_patterns=args.skip_task_pattern,
             extra_zed_options=args.extra_zed_options,
             extra_vscode_options=args.extra_vscode_options,
             verbose=args.verbose,

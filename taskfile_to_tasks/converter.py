@@ -6,6 +6,7 @@ Taskfile.yml files to tasks.json format for various editors.
 """
 
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -69,6 +70,7 @@ class TaskfileToTasks:
         output_dir: Optional[str] = None,
         editor: str = "zed",
         skip_tasks: Optional[List[str]] = None,
+        skip_task_patterns: Optional[List[str]] = None,
         extra_zed_options: Optional[List[str]] = None,
         extra_vscode_options: Optional[List[str]] = None,
         verbose: bool = False,
@@ -80,6 +82,7 @@ class TaskfileToTasks:
             output_dir: Output directory for tasks.json (defaults to editor config dir)
             editor: Target editor - "vscode" or "zed"
             skip_tasks: List of task IDs to skip
+            skip_task_patterns: List of regex patterns for task IDs to skip
             extra_zed_options: List of YAML option strings to merge with Zed tasks
             extra_vscode_options: List of YAML option strings to merge with VSCode presentation
             verbose: Enable verbose output
@@ -93,6 +96,7 @@ class TaskfileToTasks:
             raise ValueError("Editor must be 'vscode' or 'zed'")
 
         self.skip_tasks = skip_tasks or []
+        self.skip_task_patterns = self._compile_patterns(skip_task_patterns or [])
         self.verbose = verbose
         self.source_file = self._resolve_source_file(source_file)
         self.output_dir = self._resolve_output_dir(output_dir)
@@ -103,6 +107,46 @@ class TaskfileToTasks:
         self.extra_vscode_options = self._parse_extra_options(
             extra_vscode_options or []
         )
+
+    def _compile_patterns(self, patterns: List[str]) -> List[re.Pattern]:
+        """Compile regex patterns for task filtering.
+
+        Args:
+            patterns: List of regex pattern strings
+
+        Returns:
+            List of compiled regex patterns
+
+        Raises:
+            ValueError: If any pattern is invalid regex
+        """
+        compiled = []
+        for pattern in patterns:
+            try:
+                compiled.append(re.compile(pattern))
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern '{pattern}': {e}")
+        return compiled
+
+    def _should_skip_task(self, task_id: str) -> bool:
+        """Check if a task should be skipped based on exact match or pattern.
+
+        Args:
+            task_id: The task ID to check
+
+        Returns:
+            True if the task should be skipped, False otherwise
+        """
+        # Check exact matches
+        if task_id in self.skip_tasks:
+            return True
+
+        # Check regex patterns
+        for pattern in self.skip_task_patterns:
+            if pattern.search(task_id):
+                return True
+
+        return False
 
     def _log(self, message: str) -> None:
         """Log a message if verbose mode is enabled.
@@ -302,13 +346,13 @@ class TaskfileToTasks:
                 continue
 
             task_id = task.get("task", "")
-            if not task_id or task_id in self.skip_tasks:
-                if task_id in self.skip_tasks:
-                    self._log(f"Skipping task: {task_id}")
+            if not task_id or self._should_skip_task(task_id):
+                if not task_id:
+                    continue
+                self._log(f"Skipping task: {task_id}")
                 continue
 
-            # Extract description and command from task
-            name = task.get("name", task_id)
+            # Extract description from task
             desc = task.get("desc", "")
 
             extracted.append(

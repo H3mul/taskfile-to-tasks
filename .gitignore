@@ -131,7 +131,6 @@ dmypy.json
 .DS_Store
 
 # Editor config
-.zed/
 .vscode/
 
 # Project specific

@@ -1,0 +1,10 @@
+[
+  {
+    "label": "Debug taskfile generation",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/taskfile_to_tasks/cli.py",
+    "args": [ ],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]

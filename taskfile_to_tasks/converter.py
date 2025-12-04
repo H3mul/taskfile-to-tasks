@@ -134,7 +134,7 @@ class TaskfileToTasks:
                 )
                 self._log(f"Found task command: {cmd}")
                 return cmd
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            except (subprocess.CalledProcessError, FileNotFoundError, PermissionError, subprocess.TimeoutExpired):
                 continue
 
         raise RuntimeError(

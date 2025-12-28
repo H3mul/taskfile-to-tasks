@@ -238,29 +238,41 @@ class TaskfileToTasks:
                 return path.resolve()
             raise FileNotFoundError(f"Taskfile not found: {source_file}")
 
-        # Try to find Taskfile.yml in git root
+        # List of taskfile names to search for, in order of preference
+        taskfile_names = [
+            "Taskfile.yml",
+            "Taskfile.yaml",
+            "taskfile.yml",
+            "taskfile.yaml",
+            "taskfile.dist.yml",
+            "taskfile.dist.yaml",
+        ]
+
+        # Try to find taskfile in git root
         try:
             git_root = subprocess.check_output(
                 ["git", "rev-parse", "--show-toplevel"],
                 stderr=subprocess.DEVNULL,
                 text=True,
             ).strip()
-            taskfile = Path(git_root) / "Taskfile.yml"
-            if taskfile.exists():
-                self._log(f"Found Taskfile.yml in git root: {taskfile}")
-                return taskfile.resolve()
+            for taskfile_name in taskfile_names:
+                taskfile = Path(git_root) / taskfile_name
+                if taskfile.exists():
+                    self._log(f"Found {taskfile_name} in git root: {taskfile}")
+                    return taskfile.resolve()
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
 
         # Try current directory
-        taskfile = Path("Taskfile.yml")
-        if taskfile.exists():
-            self._log(f"Found Taskfile.yml in current directory: {taskfile}")
-            return taskfile.resolve()
+        for taskfile_name in taskfile_names:
+            taskfile = Path(taskfile_name)
+            if taskfile.exists():
+                self._log(f"Found {taskfile_name} in current directory: {taskfile}")
+                return taskfile.resolve()
 
         raise FileNotFoundError(
-            "Taskfile.yml not found. Provide explicit path with --source or "
-            "ensure it exists in git root or current directory."
+            "Taskfile not found (searched for: Taskfile.yml, Taskfile.yaml, taskfile.yml, taskfile.yaml, taskfile.dist.yml, taskfile.dist.yaml). "
+            "Provide explicit path with --source or ensure it exists in git root or current directory."
         )
 
     def _resolve_output_dir(self, output_dir: Optional[str]) -> Path:
